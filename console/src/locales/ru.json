@@ -2549,7 +2549,8 @@
     "openDirLoading": "Загрузка...",
     "openDirEmpty": "Нет подкаталогов",
     "openDirHome": "Домой",
-    "openDirRefresh": "Обновить"
+    "openDirRefresh": "Обновить",
+    "openDirHiddenFolders": "Скрытые папки"
   },
   "market": {
     "searchPlaceholder": "Поиск навыков по платформам",

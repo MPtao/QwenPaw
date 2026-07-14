@@ -207,6 +207,45 @@ class CommandHandler(ConversationCommandHandlerMixin):
         """Write the rolling compaction summary."""
         self._state.summary = value or ""
 
+    def _reset_stop_gates(  # pylint: disable=protected-access
+        self,
+    ) -> None:
+        """Reset all gate / mode state on /new or /clear."""
+        ws = getattr(
+            self._prompt_context,
+            "workspace",
+            None,
+        )
+        if ws is None:
+            return
+
+        handler = getattr(ws, "_stop_handler", None)
+        if handler is not None:
+            handler.reset()
+
+        for mode in getattr(
+            getattr(ws, "plugins", None),
+            "modes",
+            [],
+        ):
+            try:
+                mode.on_conversation_reset(ws)
+            except Exception:  # noqa: BLE001
+                logger.warning(
+                    "mode '%s' reset raised",
+                    getattr(mode, "name", "?"),
+                    exc_info=True,
+                )
+
+        agent = self._agent or getattr(
+            self._prompt_context,
+            "agent",
+            None,
+        )
+        if agent is not None:
+            agent._gate_pending_stop = None
+            agent._gate_pending_continue = None
+
     def is_command(self, query: str | None) -> bool:
         """Check if the query is a system command (alias for mixin)."""
         return self.is_conversation_command(query)
@@ -539,6 +578,7 @@ class CommandHandler(ConversationCommandHandlerMixin):
 
     async def _process_new(self, messages: list[Msg], _args: str = "") -> Msg:
         """Process /new command."""
+        self._reset_stop_gates()
         if not messages:
             self._set_summary("")
             return await self._make_system_msg(
@@ -579,6 +619,7 @@ class CommandHandler(ConversationCommandHandlerMixin):
         """Process /clear command."""
         await self._persist_and_clear()
         self._set_summary("")
+        self._reset_stop_gates()
         return await self._make_system_msg(
             "**History Cleared!**\n\n"
             "- Compressed summary reset\n"

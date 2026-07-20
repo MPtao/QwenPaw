@@ -418,9 +418,11 @@ async def lifespan(  # pylint: disable=too-many-statements,too-many-branches
             from ..plugins.loader import PluginLoader
             from ..plugins.runtime import RuntimeHelpers
 
-            plugin_dirs = [
-                get_plugins_dir(),
-            ]
+            # PawApps install into the plugins dir alongside other plugins
+            # and load through the same pipeline as 'app'-type plugins
+            # (plugin.json carrying meta.pawapp); surfaced only in the App
+            # Center, hidden from the sidebar.
+            plugin_dirs = [get_plugins_dir()]
 
             plugin_loader = PluginLoader(plugin_dirs)
 
